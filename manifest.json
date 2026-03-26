@@ -1,10 +1,9 @@
-
 {
   "name": "Avisos",
   "short_name": "Avisos",
   "start_url": "/avisos-app/",
   "display": "standalone",
-  "background_color": "#f1f5f9",
+  "background_color": "#ffffff",
   "theme_color": "#000000",
   "icons": []
 }
