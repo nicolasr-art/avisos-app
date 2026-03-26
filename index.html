@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Avisos</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f1f5f9;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+    }
+    .app {
+      width: 100%;
+      max-width: 420px;
+      background: white;
+      border: 6px solid black;
+      border-radius: 28px;
+      padding: 18px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    }
+    h1 {
+      text-align: center;
+      margin: 0;
+      font-size: 24px;
+    }
+    .sub {
+      text-align: center;
+      color: #64748b;
+      font-size: 12px;
+      margin: 8px 0 16px;
+    }
+    textarea, select, button {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid #cbd5e1;
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+    button {
+      cursor: pointer;
+    }
+    .btn-dark {
+      background: black;
+      color: white;
+      border: none;
+    }
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .card {
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 10px;
+      margin-bottom: 8px;
+      background: #fff;
+    }
+    .muted {
+      color: #64748b;
+      font-size: 12px;
+    }
+    .pill {
+      display: inline-block;
+      background: #f1f5f9;
+      border-radius: 999px;
+      padding: 4px 8px;
+      font-size: 11px;
+      color: #475569;
+    }
+    .section-title {
+      font-weight: bold;
+      margin: 16px 0 8px;
+    }
+    .msg {
+      color: #047857;
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+    .alert-box {
+      background: black;
+      color: white;
+      border-radius: 12px;
+      padding: 12px;
+      margin-top: 12px;
+    }
+    .alert-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    .alert-actions button {
+      width: auto;
+      margin: 0;
+      border: none;
+      background: rgba(255,255,255,0.15);
+      color: white;
+      padding: 8px 10px;
+    }
+    .small-btns {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .small-btns button {
+      margin: 0;
+      padding: 8px;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <h1>Avisos</h1>
+    <div class="sub">Trabajo + personal en una sola app</div>
+
+    <textarea id="texto" rows="3" placeholder="Escribí: instalar hotfix en Cerro a las 13:00"></textarea>
+
+    <div class="row">
+      <select id="tipo">
+        <option value="">Tipo</option>
+        <option value="Personal">Personal</option>
+        <option value="Cliente">Cliente</option>
+      </select>
+
+      <select id="cliente">
+        <option value="">Cliente guardado</option>
+      </select>
+    </div>
+
+    <button class="btn-dark" onclick="guardarRecordatorio()">Guardar recordatorio</button>
+    <button onclick="activarNotificaciones()">Activar notificaciones</button>
+
+    <div id="mensaje" class="msg"></div>
+    <div class="muted" id="permiso"></div>
+    <div class="muted">Revisión automática: cada 15 segundos.</div>
+
+    <div class="section-title">Clientes</div>
+    <div id="clientesLista"></div>
+
+    <div class="section-title">Hoy</div>
+    <div id="tareasHoy"></div>
+
+    <div class="section-title">Mañana</div>
+    <div id="tareasManana"></div>
+
+    <div id="avisoBox" class="alert-box" style="display:none;"></div>
+  </div>
+
+  <script>
+    const clientes = [
+      { nombre: 'Cerro', observacion: 'Hotfix pendiente en servidor principal' },
+      { nombre: 'Juan', observacion: 'Revisar actualización de Tango' },
+      { nombre: 'Metalúrgica Sur', observacion: 'Validar licencia antes de llamar' },
+      { nombre: 'Distribuidora Norte', observacion: 'Pendiente de seguimiento' }
+    ];
+
+    let tareasHoy = [
+      { id: 1, hora: '09:00', titulo: 'Actualizar Tango', cliente: 'Juan', tipo: 'Cliente', estado: 'Pendiente', ultimaAlerta: null },
+      { id: 2, hora: '13:00', titulo: 'Instalar hotfix', cliente: 'Cerro', tipo: 'Cliente', estado: 'Pendiente', ultimaAlerta: null },
+      { id: 3, hora: '16:00', titulo: 'Mandar mensaje a mi mamá', cliente: null, tipo: 'Personal', estado: 'Pendiente', ultimaAlerta: null }
+    ];
+
+    let tareasManana = [
+      { id: 4, hora: '10:00', titulo: 'Llamar por licencia', cliente: 'Metalúrgica Sur', tipo: 'Cliente', estado: 'Pendiente', ultimaAlerta: null },
+      { id: 5, hora: '20:00', titulo: 'Tomar pastilla', cliente: null, tipo: 'Personal', estado: 'Pendiente', ultimaAlerta: null }
+    ];
+
+    let editandoTarea = null;
+    let avisoActivo = null;
+
+    function setMensaje(txt) {
+      document.getElementById('mensaje').textContent = txt || '';
+    }
+
+    function actualizarPermiso() {
+      const permiso = ('Notification' in window) ? Notification.permission : 'no soportado';
+      document.getElementById('permiso').textContent =
+        'Permiso de notificaciones: ' + permiso +
+        (permiso === 'denied' ? ' (tenés que habilitarlo en el navegador)' : '');
+    }
+
+    function renderClientes() {
+      const cont = document.getElementById('clientesLista');
+      const select = document.getElementById('cliente');
+
+      cont.innerHTML = '';
+      select.innerHTML = '<option value="">Cliente guardado</option>';
+
+      clientes.forEach(c => {
+        const div = document.createElement('div');
+        div.className = 'card';
+        div.innerHTML = `
+          <div><strong>${c.nombre}</strong></div>
+          <div class="muted">${c.observacion}</div>
+        `;
+        cont.appendChild(div);
+
+        const opt = document.createElement('option');
+        opt.value = c.nombre;
+        opt.textContent = c.nombre;
+        select.appendChild(opt);
+      });
+    }
+
+    function detectarHora(frase) {
+      const match = frase.match(/\b(\d{1,2})(?::(\d{2}))?\b/);
+      if (!match) return '09:00';
+      const h = String(Math.min(23, Number(match[1]))).padStart(2, '0');
+      const m = String(Math.min(59, Number(match[2] || '0'))).padStart(2, '0');
+      return `${h}:${m}`;
+    }
+
+    function limpiarTitulo(frase) {
+      return frase
+        .replace(/recordame/gi, '')
+        .replace(/a las \d{1,2}(:\d{2})?/gi, '')
+        .replace(/mañana/gi, '')
+        .replace(/hoy/gi, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    function detectarCliente(frase) {
+      const clienteSelect = document.getElementById('cliente').value;
+      if (clienteSelect) return clienteSelect;
+
+      const lower = frase.toLowerCase();
+      const encontrado = clientes.find(c => lower.includes(c.nombre.toLowerCase()));
+      return encontrado ? encontrado.nombre : null;
+    }
+
+    function detectarTipo(frase, cliente) {
+      const tipoSelect = document.getElementById('tipo').value;
+      if (tipoSelect) return tipoSelect;
+      if (cliente) return 'Cliente';
+      if (frase.toLowerCase().includes('cliente')) return 'Cliente';
+      return 'Personal';
+    }
+
+    function esManana(frase) {
+      return frase.toLowerCase().includes('mañana');
+    }
+
+    function siguienteId() {
+      const todas = [...tareasHoy, ...tareasManana];
+      return todas.length ? Math.max(...todas.map(t => t.id)) + 1 : 1;
+    }
+
+    function limpiarFormulario() {
+      document.getElementById('texto').value = '';
+      document.getElementById('tipo').value = '';
+      document.getElementById('cliente').value = '';
+      editandoTarea = null;
+      document.querySelector('.btn-dark').textContent = 'Guardar recordatorio';
+    }
+
+    function cargarFormularioDesdeTarea(tarea) {
+      const texto = tarea.cliente
+        ? `${tarea.titulo} en ${tarea.cliente} a las ${tarea.hora}`
+        : `${tarea.titulo} a las ${tarea.hora}`;
+
+      document.getElementById('texto').value = texto;
+      document.getElementById('tipo').value = tarea.tipo;
+      document.getElementById('cliente').value = tarea.cliente || '';
+      editandoTarea = tarea;
+      document.querySelector('.btn-dark').textContent = 'Guardar cambios';
+      setMensaje('Editando: ' + tarea.titulo);
+    }
+
+    function eliminarTarea(id, esHoyLista) {
+      if (esHoyLista) {
+        tareasHoy = tareasHoy.filter(t => t.id !== id);
+      } else {
+        tareasManana = tareasManana.filter(t => t.id !== id);
+      }
+
+      if (avisoActivo && avisoActivo.id === id) {
+        avisoActivo = null;
+        renderAvisoActivo();
+      }
+
+      if (editandoTarea && editandoTarea.id === id) {
+        limpiarFormulario();
+      }
+
+      setMensaje('Aviso eliminado.');
+      renderTodo();
+    }
+
+    function guardarRecordatorio() {
+      const frase = document.getElementById('texto').value.trim();
+      if (!frase) {
+        setMensaje('Escribí algo antes de guardar.');
+        return;
+      }
+
+      const hora = detectarHora(frase);
+      const cliente = detectarCliente(frase);
+      const tipo = detectarTipo(frase, cliente);
+      const titulo = limpiarTitulo(frase) || frase;
+      const manana = esManana(frase);
+
+      if (editandoTarea) {
+        const actualizada = {
+          ...editandoTarea,
+          hora,
+          titulo,
+          cliente: tipo === 'Cliente' ? cliente : null,
+          tipo,
+          ultimaAlerta: null
+        };
+
+        const estabaHoy = tareasHoy.some(t => t.id === editandoTarea.id);
+
+        if (estabaHoy && manana) {
+          tareasHoy = tareasHoy.filter(t => t.id !== editandoTarea.id);
+          tareasManana.push(actualizada);
+        } else if (!estabaHoy && !manana) {
+          tareasManana = tareasManana.filter(t => t.id !== editandoTarea.id);
+          tareasHoy.push(actualizada);
+        } else if (estabaHoy) {
+          tareasHoy = tareasHoy.map(t => t.id === actualizada.id ? actualizada : t);
+        } else {
+          tareasManana = tareasManana.map(t => t.id === actualizada.id ? actualizada : t);
+        }
+
+        tareasHoy.sort((a,b) => a.hora.localeCompare(b.hora));
+        tareasManana.sort((a,b) => a.hora.localeCompare(b.hora));
+
+        if (avisoActivo && avisoActivo.id === actualizada.id) {
+          avisoActivo = actualizada;
+        }
+
+        limpiarFormulario();
+        setMensaje(`Aviso modificado: ${actualizada.titulo} a las ${actualizada.hora}`);
+        renderTodo();
+        return;
+      }
+
+      const nueva = {
+        id: siguienteId(),
+        hora,
+        titulo,
+        cliente: tipo === 'Cliente' ? cliente : null,
+        tipo,
+        estado: 'Pendiente',
+        ultimaAlerta: null
+      };
+
+      if (manana) {
+        tareasManana.push(nueva);
+        tareasManana.sort((a,b) => a.hora.localeCompare(b.hora));
+        setMensaje(`Guardado para mañana: ${nueva.titulo} a las ${nueva.hora}`);
+      } else {
+        tareasHoy.push(nueva);
+        tareasHoy.sort((a,b) => a.hora.localeCompare(b.hora));
+        setMensaje(`Guardado: ${nueva.titulo} a las ${nueva.hora}`);
+      }
+
+      limpiarFormulario();
+      renderTodo();
+    }
+
+    async function activarNotificaciones() {
+      if (!('Notification' in window)) {
+        setMensaje('Este navegador no soporta notificaciones.');
+        actualizarPermiso();
+        return;
+      }
+
+      const permiso = await Notification.requestPermission();
+      actualizarPermiso();
+
+      if (permiso === 'granted') {
+        setMensaje('Notificaciones activadas.');
+      } else {
+        setMensaje('No se habilitaron las notificaciones.');
+      }
+    }
+
+    function enviarNotificacionBrowser(tarea) {
+      if (!('Notification' in window)) return;
+      if (Notification.permission !== 'granted') return;
+
+      const cuerpo = tarea.cliente ? `${tarea.titulo} - ${tarea.cliente}` : tarea.titulo;
+      new Notification('Avisos', { body: `Ahora: ${cuerpo}` });
+    }
+
+    function dispararAviso(tarea) {
+      avisoActivo = tarea;
+      tarea.ultimaAlerta = horaActual();
+      enviarNotificacionBrowser(tarea);
+      setMensaje(`Aviso lanzado: ${tarea.titulo}`);
+      renderAvisoActivo();
+      renderTodo();
+    }
+
+    function marcarHecho(id) {
+      tareasHoy = tareasHoy.map(t => t.id === id ? { ...t, estado: 'Hecho' } : t);
+      avisoActivo = null;
+      setMensaje('Marcaste como hecho.');
+      renderTodo();
+      renderAvisoActivo();
+    }
+
+    function posponerTarea(id, minutos) {
+      tareasHoy = tareasHoy.map(t => {
+        if (t.id !== id) return t;
+
+        const [h, m] = t.hora.split(':').map(Number);
+        const fecha = new Date();
+        fecha.setHours(h, m, 0, 0);
+        fecha.setMinutes(fecha.getMinutes() + minutos);
+
+        return {
+          ...t,
+          hora: `${String(fecha.getHours()).padStart(2, '0')}:${String(fecha.getMinutes()).padStart(2, '0')}`,
+          estado: `Pospuesto ${minutos} min`
+        };
+      }).sort((a,b) => a.hora.localeCompare(b.hora));
+
+      avisoActivo = null;
+      setMensaje('Aviso pospuesto.');
+      renderTodo();
+      renderAvisoActivo();
+    }
+
+    function horaActual() {
+      const ahora = new Date();
+      return `${String(ahora.getHours()).padStart(2, '0')}:${String(ahora.getMinutes()).padStart(2, '0')}`;
+    }
+
+    function revisarAvisosAutomaticos() {
+      const actual = horaActual();
+
+      tareasHoy = tareasHoy.map(t => {
+        if (t.estado === 'Hecho') return t;
+        if (t.hora !== actual) return t;
+        if (t.ultimaAlerta === actual) return t;
+
+        avisoActivo = t;
+        enviarNotificacionBrowser(t);
+        setMensaje(`Aviso automático: ${t.titulo}`);
+
+        return { ...t, ultimaAlerta: actual };
+      });
+
+      renderTodo();
+      renderAvisoActivo();
+    }
+
+    function renderListaTareas(idContenedor, lista, esHoyLista) {
+      const cont = document.getElementById(idContenedor);
+      cont.innerHTML = '';
+
+      lista.forEach(t => {
+        const div = document.createElement('div');
+        div.className = 'card';
+
+        div.innerHTML = `
+          <div style="display:flex;justify-content:space-between;gap:8px;">
+            <div class="muted">${t.hora}</div>
+            <span class="pill">${t.tipo}</span>
+          </div>
+          <div style="font-weight:bold;margin-top:4px;">${t.titulo}</div>
+          ${t.cliente ? `<div class="muted" style="margin-top:4px;">Cliente: ${t.cliente}</div>` : ''}
+          <div class="muted" style="margin-top:4px;">Estado: ${t.estado}</div>
+        `;
+
+        const acciones = document.createElement('div');
+        acciones.className = 'small-btns';
+
+        const btnMod = document.createElement('button');
+        btnMod.textContent = 'Modificar';
+        btnMod.onclick = () => cargarFormularioDesdeTarea(t);
+
+        const btnElim = document.createElement('button');
+        btnElim.textContent = 'Eliminar';
+        btnElim.onclick = () => eliminarTarea(t.id, esHoyLista);
+
+        acciones.appendChild(btnMod);
+        acciones.appendChild(btnElim);
+
+        if (esHoyLista && t.estado !== 'Hecho') {
+          const btnAviso = document.createElement('button');
+          btnAviso.textContent = 'Probar aviso';
+          btnAviso.className = 'btn-dark';
+          btnAviso.onclick = () => dispararAviso(t);
+          acciones.appendChild(btnAviso);
+        } else {
+          const info = document.createElement('div');
+          info.className = 'muted';
+          info.style.display = 'flex';
+          info.style.alignItems = 'center';
+          info.style.justifyContent = 'center';
+          info.textContent = esHoyLista ? 'Hecho' : 'Programado';
+          acciones.appendChild(info);
+        }
+
+        div.appendChild(acciones);
+        cont.appendChild(div);
+      });
+    }
+
+    function renderAvisoActivo() {
+      const box = document.getElementById('avisoBox');
+
+      if (!avisoActivo) {
+        box.style.display = 'block';
+        box.innerHTML = `
+          <div style="font-size:12px;">Avisos</div>
+          <div style="margin-top:6px;font-size:14px;">Esperando el próximo aviso o una prueba manual.</div>
+        `;
+        return;
+      }
+
+      box.style.display = 'block';
+      box.innerHTML = `
+        <div style="font-size:12px;">Ahora</div>
+        <div style="margin-top:6px;font-size:14px;font-weight:bold;">
+          ${avisoActivo.titulo}${avisoActivo.cliente ? ' - ' + avisoActivo.cliente : ''}
+        </div>
+        <div class="alert-actions">
+          <button onclick="marcarHecho(${avisoActivo.id})">Hecho</button>
+          <button onclick="posponerTarea(${avisoActivo.id}, 10)">10 min</button>
+          <button onclick="posponerTarea(${avisoActivo.id}, 60)">1 hora</button>
+        </div>
+      `;
+    }
+
+    function renderTodo() {
+      renderClientes();
+      renderListaTareas('tareasHoy', tareasHoy, true);
+      renderListaTareas('tareasManana', tareasManana, false);
+      actualizarPermiso();
+    }
+
+    renderTodo();
+    renderAvisoActivo();
+    setInterval(revisarAvisosAutomaticos, 15000);
+  </script>
+</body>
+</html>
