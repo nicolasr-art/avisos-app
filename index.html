@@ -6,20 +6,20 @@
   <title>Avisos</title>
   <link rel="manifest" href="./manifest.json">
 </head>
-<body style="font-family: Arial; padding:20px">
+<body style="font-family: Arial; padding:20px; max-width:420px; margin:auto;">
 
 <h2>Avisos</h2>
 
-<button onclick="activarNotificaciones()">Activar notificaciones</button>
-<br><br>
+<label for="texto">Texto</label><br>
+<input id="texto" type="text" placeholder="Ej: Instalar hotfix en Cerro" style="width:100%; padding:10px; margin-top:6px; margin-bottom:12px; box-sizing:border-box;">
 
-<button onclick="crearAviso()">Crear aviso de prueba</button>
-<br><br>
+<label for="hora">Hora</label><br>
+<input id="hora" type="time" style="width:100%; padding:10px; margin-top:6px; margin-bottom:12px; box-sizing:border-box;">
 
-<button onclick="probarAviso()">Probar notificación</button>
-<br><br>
-
-<button onclick="borrarAviso()">Borrar aviso</button>
+<button onclick="activarNotificaciones()" style="width:100%; padding:12px; margin-bottom:10px;">Activar notificaciones</button>
+<button onclick="guardarAviso()" style="width:100%; padding:12px; margin-bottom:10px;">Guardar aviso</button>
+<button onclick="probarAviso()" style="width:100%; padding:12px; margin-bottom:10px;">Probar notificación</button>
+<button onclick="borrarAviso()" style="width:100%; padding:12px; margin-bottom:10px;">Borrar aviso</button>
 
 <p id="estado">Estado: listo</p>
 <p id="permiso">Permiso: desconocido</p>
@@ -28,8 +28,8 @@
 
 <script>
 let tarea = null;
+let ultimoMinutoAvisado = null;
 
-// Registrar service worker cuando la página carga
 window.addEventListener('load', async () => {
   document.getElementById('entorno').innerText = 'Entorno: ' + window.location.origin;
 
@@ -45,6 +45,8 @@ window.addEventListener('load', async () => {
       document.getElementById('estado').innerText = 'Error SW: ' + e.message;
     }
   }
+
+  setInterval(revisarAvisoAutomatico, 10000);
 });
 
 function activarNotificaciones() {
@@ -58,40 +60,75 @@ function activarNotificaciones() {
   });
 }
 
-function crearAviso() {
-  tarea = { titulo: 'Prueba de aviso' };
-  document.getElementById('tarea').innerText = 'Aviso actual: ' + tarea.titulo;
-  document.getElementById('estado').innerText = 'Estado: aviso creado';
+function guardarAviso() {
+  const texto = document.getElementById('texto').value.trim();
+  const hora = document.getElementById('hora').value;
+
+  if (!texto) {
+    alert('Escribí el texto del aviso');
+    return;
+  }
+
+  if (!hora) {
+    alert('Elegí una hora');
+    return;
+  }
+
+  tarea = {
+    titulo: texto,
+    hora: hora
+  };
+
+  ultimoMinutoAvisado = null;
+  document.getElementById('tarea').innerText = 'Aviso actual: ' + tarea.titulo + ' a las ' + tarea.hora;
+  document.getElementById('estado').innerText = 'Estado: aviso guardado';
 }
 
 function borrarAviso() {
   tarea = null;
+  ultimoMinutoAvisado = null;
+  document.getElementById('texto').value = '';
+  document.getElementById('hora').value = '';
   document.getElementById('tarea').innerText = 'Aviso actual: ninguno';
   document.getElementById('estado').innerText = 'Estado: aviso borrado';
 }
 
-async function probarAviso() {
-  if (!tarea) {
-    alert('Primero creá el aviso');
-    return;
-  }
-
+async function enviarNotificacion(titulo) {
   if (Notification.permission !== 'granted') {
-    alert('No hay permiso de notificaciones');
+    document.getElementById('estado').innerText = 'Estado: no hay permiso de notificaciones';
     return;
   }
 
   try {
     const reg = await navigator.serviceWorker.ready;
-
     await reg.showNotification('Avisos', {
-      body: 'Ahora: ' + tarea.titulo
+      body: 'Ahora: ' + titulo
     });
-
     document.getElementById('estado').innerText = 'Estado: notificación enviada';
-
   } catch (e) {
     document.getElementById('estado').innerText = 'Error: ' + e.message;
+  }
+}
+
+async function probarAviso() {
+  if (!tarea) {
+    alert('Primero guardá un aviso');
+    return;
+  }
+
+  await enviarNotificacion(tarea.titulo);
+}
+
+function revisarAvisoAutomatico() {
+  if (!tarea) return;
+  if (!tarea.hora) return;
+
+  const ahora = new Date();
+  const horaActual = String(ahora.getHours()).padStart(2, '0') + ':' + String(ahora.getMinutes()).padStart(2, '0');
+
+  if (horaActual === tarea.hora && ultimoMinutoAvisado !== horaActual) {
+    ultimoMinutoAvisado = horaActual;
+    enviarNotificacion(tarea.titulo);
   }
 }
 </script>
