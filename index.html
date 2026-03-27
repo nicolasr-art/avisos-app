@@ -271,6 +271,48 @@
       font-size: 12px;
       margin-top: -4px;
     }
+  
+
+    /* ALERTA TIPO VENTANA */
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.6);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-box {
+      background: white;
+      padding: 20px;
+      border-radius: 20px;
+      width: 90%;
+      max-width: 350px;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    .modal-actions {
+      margin-top: 15px;
+      display: grid;
+      gap: 10px;
+    }
+
   </style>
 </head>
 <body>
@@ -812,6 +854,9 @@ async function enviarNotificacion(aviso) {
       tag: 'aviso-' + aviso.id,
       renotify: true
     });
+
+    // abrir ventana tipo alerta
+    abrirModal(aviso);
     actualizarPreview(aviso);
     setEstado('notificación enviada');
   } catch (e) {
@@ -930,5 +975,47 @@ function renderAvisos() {
   contenedor.innerHTML = renderGrupo('Clientes', clientesLista) + renderGrupo('Personales', personalesLista);
 }
 </script>
+
+
+<!-- MODAL ALERTA -->
+<div id="modalAlerta" class="modal">
+  <div class="modal-box">
+    <div class="modal-title" id="modalTexto">Aviso</div>
+    <div class="modal-actions">
+      <button class="btn-primary" onclick="cerrarModal()">Hecho</button>
+      <button class="btn-secondary" onclick="posponerDesdeModal()">+10 min</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let avisoActivoModal = null;
+
+function abrirModal(aviso) {
+  avisoActivoModal = aviso;
+  const detalle = aviso.tipo === 'cliente' && aviso.cliente ? `${aviso.titulo} - ${aviso.cliente}` : aviso.titulo;
+  document.getElementById('modalTexto').innerText = detalle;
+  document.getElementById('modalAlerta').classList.add('active');
+
+  // sonido simple
+  const audio = new Audio('https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg');
+  audio.play().catch(()=>{});
+}
+
+function cerrarModal() {
+  document.getElementById('modalAlerta').classList.remove('active');
+  if (avisoActivoModal) {
+    marcarHecho(avisoActivoModal.id);
+  }
+}
+
+function posponerDesdeModal() {
+  document.getElementById('modalAlerta').classList.remove('active');
+  if (avisoActivoModal) {
+    posponerAviso(avisoActivoModal.id, 10);
+  }
+}
+</script>
+
 </body>
 </html>
