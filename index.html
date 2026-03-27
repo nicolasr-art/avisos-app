@@ -5,94 +5,439 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Avisos</title>
   <link rel="manifest" href="./manifest.json">
+  <style>
+    :root {
+      --bg: #eef2f7;
+      --card: #ffffff;
+      --text: #111827;
+      --muted: #6b7280;
+      --line: #dbe3ee;
+      --dark: #0f172a;
+      --dark-2: #1e293b;
+      --soft: #f8fafc;
+      --ok: #166534;
+      --warn: #92400e;
+      --danger: #b91c1c;
+      --chip: #e5eefc;
+      --chip-text: #1d4ed8;
+      --shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(180deg, #f5f7fb 0%, #eef2f7 100%);
+      color: var(--text);
+      padding: 18px;
+    }
+
+    .app {
+      max-width: 460px;
+      margin: 0 auto;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, var(--dark) 0%, var(--dark-2) 100%);
+      color: white;
+      border-radius: 28px;
+      padding: 20px;
+      box-shadow: var(--shadow);
+      margin-bottom: 16px;
+    }
+
+    .hero h1 {
+      margin: 0 0 6px 0;
+      font-size: 28px;
+    }
+
+    .hero p {
+      margin: 0;
+      color: rgba(255,255,255,0.8);
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .section {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 14px;
+      box-shadow: var(--shadow);
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .section-title h3 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .badge {
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      background: var(--soft);
+      color: var(--muted);
+      border: 1px solid var(--line);
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      color: var(--muted);
+      margin: 0 0 6px;
+    }
+
+    input, select, button {
+      width: 100%;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      padding: 12px 14px;
+      font-size: 14px;
+      background: white;
+    }
+
+    input:focus, select:focus {
+      outline: 2px solid #bfdbfe;
+      border-color: #93c5fd;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .stack { display: grid; gap: 12px; }
+
+    button {
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .btn-primary {
+      background: var(--dark);
+      color: white;
+      border-color: var(--dark);
+    }
+
+    .btn-secondary {
+      background: var(--soft);
+      color: var(--text);
+    }
+
+    .btn-danger {
+      color: var(--danger);
+      background: #fff5f5;
+      border-color: #fecaca;
+    }
+
+    .status-panel {
+      display: grid;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--muted);
+      background: var(--soft);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 12px;
+    }
+
+    .status-panel strong { color: var(--text); }
+
+    .client-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: var(--chip);
+      color: var(--chip-text);
+      font-size: 12px;
+      border: 1px solid #bfdbfe;
+    }
+
+    .list-title {
+      margin: 0 0 10px;
+      font-size: 15px;
+      color: var(--muted);
+    }
+
+    .aviso-card {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 12px;
+      margin-bottom: 10px;
+      background: white;
+    }
+
+    .aviso-card.hecho {
+      background: #f0fdf4;
+      border-color: #bbf7d0;
+    }
+
+    .aviso-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .aviso-title {
+      font-weight: 700;
+      line-height: 1.35;
+    }
+
+    .aviso-type {
+      font-size: 11px;
+      text-transform: capitalize;
+      color: var(--muted);
+      background: var(--soft);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 5px 8px;
+      height: fit-content;
+      white-space: nowrap;
+    }
+
+    .aviso-meta {
+      display: grid;
+      gap: 4px;
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 10px;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .actions .full { grid-column: 1 / -1; }
+
+    .alert-preview {
+      background: linear-gradient(135deg, var(--dark) 0%, #111827 100%);
+      color: white;
+      border-radius: 20px;
+      padding: 14px;
+      box-shadow: var(--shadow);
+    }
+
+    .alert-preview .small {
+      font-size: 12px;
+      color: rgba(255,255,255,0.72);
+      margin-bottom: 6px;
+    }
+
+    .alert-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    .alert-actions span {
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.1);
+      padding: 7px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+    }
+
+    .helper {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: -4px;
+    }
+  </style>
 </head>
-<body style="font-family: Arial; padding:20px; max-width:420px; margin:auto; box-sizing:border-box;">
+<body>
+<div class="app">
+  <div class="hero">
+    <h1>Avisos</h1>
+    <p>Trabajo y personal en una sola app, con recordatorios automáticos, insistencia y formato listo para llevar a app instalada.</p>
+  </div>
 
-<h2 style="margin-bottom:8px;">Avisos</h2>
-<p style="margin-top:0; color:#555; font-size:14px;">Recordatorios automáticos con trabajo/personal, fecha, hora, edición, eliminación e insistencia.</p>
+  <div class="section">
+    <div class="section-title">
+      <h3>Carga rápida</h3>
+      <span class="badge">MVP funcionando</span>
+    </div>
 
-<label for="modoCarga">Modo de carga</label><br>
-<select id="modoCarga" onchange="cambiarModoCarga()" style="width:100%; padding:10px; margin-top:6px; margin-bottom:12px; box-sizing:border-box;">
-  <option value="separado" selected>Texto + fecha + hora</option>
-  <option value="libre">Texto libre</option>
-</select>
+    <div class="stack">
+      <div>
+        <label for="modoCarga">Modo de carga</label>
+        <select id="modoCarga" onchange="cambiarModoCarga()">
+          <option value="separado" selected>Texto + fecha + hora</option>
+          <option value="libre">Texto libre</option>
+        </select>
+      </div>
 
-<div id="bloqueLibre" style="display:none;">
-  <label for="textoLibre">Texto libre</label><br>
-  <input id="textoLibre" type="text" placeholder="Ej: mañana 13:00 instalar hotfix en Cerro" style="width:100%; padding:10px; margin-top:6px; margin-bottom:12px; box-sizing:border-box;">
+      <div id="bloqueLibre" style="display:none;">
+        <label for="textoLibre">Texto libre</label>
+        <input id="textoLibre" type="text" placeholder="Ej: mañana 13:00 instalar hotfix en cliente Cerro">
+        <div class="helper">Entiende hoy, mañana, hora y cliente/en + nombre.</div>
+      </div>
+
+      <div class="grid-2">
+        <div>
+          <label for="tipo">Tipo</label>
+          <select id="tipo" onchange="mostrarCampoCliente()">
+            <option value="personal" selected>Personal</option>
+            <option value="cliente">Cliente</option>
+          </select>
+        </div>
+        <div id="bloqueCliente" style="display:none;">
+          <label for="cliente">Cliente</label>
+          <input id="cliente" list="clientesGuardados" type="text" placeholder="Ej: Cerro">
+          <datalist id="clientesGuardados"></datalist>
+        </div>
+      </div>
+
+      <div>
+        <label for="texto">Texto</label>
+        <input id="texto" type="text" placeholder="Ej: Instalar hotfix">
+      </div>
+
+      <div class="grid-2">
+        <div>
+          <label for="fecha">Fecha</label>
+          <input id="fecha" type="date">
+        </div>
+        <div>
+          <label for="hora">Hora</label>
+          <input id="hora" type="time">
+        </div>
+      </div>
+
+      <div>
+        <label for="repeticion">Insistencia</label>
+        <select id="repeticion">
+          <option value="0">Solo una vez</option>
+          <option value="5">Cada 5 minutos</option>
+          <option value="10" selected>Cada 10 minutos</option>
+          <option value="15">Cada 15 minutos</option>
+        </select>
+      </div>
+
+      <div class="stack">
+        <button class="btn-primary" onclick="guardarAviso()" id="btnGuardar">Guardar aviso</button>
+        <button class="btn-secondary" onclick="cancelarEdicion()" id="btnCancelar" style="display:none;">Cancelar edición</button>
+        <button class="btn-secondary" onclick="activarNotificaciones()">Activar notificaciones</button>
+        <button class="btn-secondary" onclick="probarAvisoManual()">Probar notificación del aviso seleccionado</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">
+      <h3>Clientes guardados</h3>
+      <span class="badge">Se guardan en este equipo</span>
+    </div>
+    <div class="client-row">
+      <input id="nuevoCliente" type="text" placeholder="Ej: Cerro">
+      <button class="btn-secondary" onclick="guardarCliente()" style="width:auto;">Agregar</button>
+    </div>
+    <div id="listaClientes" class="chips" style="margin-top:12px;"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">
+      <h3>Estado</h3>
+      <span class="badge" id="seleccion">Editando: ninguno</span>
+    </div>
+    <div class="status-panel">
+      <div><strong>Estado:</strong> <span id="estado">listo</span></div>
+      <div><strong>Permiso:</strong> <span id="permiso">desconocido</span></div>
+      <div><strong>Entorno:</strong> <span id="entorno">verificando</span></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">
+      <h3>Vista de alerta</h3>
+      <span class="badge">Como app</span>
+    </div>
+    <div class="alert-preview">
+      <div class="small">Ahora</div>
+      <div id="previewAlerta" style="font-weight:700; font-size:16px;">Instalar hotfix - Cerro</div>
+      <div class="alert-actions">
+        <span>Hecho</span>
+        <span>+10 min</span>
+        <span>Modificar</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">
+      <h3>Avisos guardados</h3>
+      <span class="badge" id="cantidadAvisos">0 avisos</span>
+    </div>
+    <div id="listaAvisos"></div>
+  </div>
 </div>
-
-<label for="tipo">Tipo</label><br>
-<select id="tipo" onchange="mostrarCampoCliente()" style="width:100%; padding:10px; margin-top:6px; margin-bottom:12px; box-sizing:border-box;">
-  <option value="personal" selected>Personal</option>
-  <option value="cliente">Cliente</option>
-</select>
-
-<div id="bloqueCliente" style="display:none;">
-  <label for="cliente">Cliente</label><br>
-  <input id="cliente" type="text" placeholder="Ej: Cerro" style="width:100%; padding:10px; margin-top:6px; margin-bottom:12px; box-sizing:border-box;">
-</div>
-
-<label for="texto">Texto</label><br>
-<input id="texto" type="text" placeholder="Ej: Instalar hotfix" style="width:100%; padding:10px; margin-top:6px; margin-bottom:12px; box-sizing:border-box;">
-
-<label for="fecha">Fecha</label><br>
-<input id="fecha" type="date" style="width:100%; padding:10px; margin-top:6px; margin-bottom:12px; box-sizing:border-box;">
-
-<label for="hora">Hora</label><br>
-<input id="hora" type="time" style="width:100%; padding:10px; margin-top:6px; margin-bottom:12px; box-sizing:border-box;">
-
-<label for="repeticion">Insistencia</label><br>
-<select id="repeticion" style="width:100%; padding:10px; margin-top:6px; margin-bottom:12px; box-sizing:border-box;">
-  <option value="0">Solo una vez</option>
-  <option value="5">Cada 5 minutos</option>
-  <option value="10" selected>Cada 10 minutos</option>
-  <option value="15">Cada 15 minutos</option>
-</select>
-
-<button onclick="activarNotificaciones()" style="width:100%; padding:12px; margin-bottom:10px;">Activar notificaciones</button>
-<button onclick="guardarAviso()" id="btnGuardar" style="width:100%; padding:12px; margin-bottom:10px;">Guardar aviso</button>
-<button onclick="cancelarEdicion()" id="btnCancelar" style="width:100%; padding:12px; margin-bottom:10px; display:none;">Cancelar edición</button>
-<button onclick="probarAvisoManual()" style="width:100%; padding:12px; margin-bottom:10px;">Probar notificación del aviso seleccionado</button>
-
-<p id="estado">Estado: listo</p>
-<p id="permiso">Permiso: desconocido</p>
-<p id="entorno">Entorno: verificando</p>
-<p id="seleccion">Editando: ninguno</p>
-
-<h3 style="margin-top:24px; margin-bottom:8px;">Avisos guardados</h3>
-<div id="listaAvisos"></div>
 
 <script>
-const STORAGE_KEY = 'avisos_app_v2';
+const STORAGE_KEY = 'avisos_app_v3';
+const CLIENTES_KEY = 'avisos_clientes_v1';
 let avisos = [];
+let clientes = [];
 let avisoEditandoId = null;
 let ultimoChequeoMinuto = null;
 
 window.addEventListener('load', async () => {
-  document.getElementById('entorno').innerText = 'Entorno: ' + window.location.origin;
+  document.getElementById('entorno').innerText = window.location.origin;
 
   if ('Notification' in window) {
-    document.getElementById('permiso').innerText = 'Permiso: ' + Notification.permission;
+    document.getElementById('permiso').innerText = Notification.permission;
   }
 
   inicializarFechaHoy();
   mostrarCampoCliente();
   cambiarModoCarga();
+  cargarClientes();
   cargarDesdeStorage();
+  renderClientes();
   renderAvisos();
 
   if ('serviceWorker' in navigator) {
     try {
       await navigator.serviceWorker.register('./service-worker.js');
-      document.getElementById('estado').innerText = 'Estado: Service Worker registrado';
+      setEstado('Service Worker registrado');
     } catch (e) {
-      document.getElementById('estado').innerText = 'Error SW: ' + e.message;
+      setEstado('Error SW: ' + e.message);
     }
   }
 
   setInterval(revisarAvisosAutomaticos, 10000);
 });
+
+function setEstado(texto) {
+  document.getElementById('estado').innerText = texto;
+}
 
 function inicializarFechaHoy() {
   const hoy = new Date();
@@ -113,8 +458,8 @@ function activarNotificaciones() {
   }
 
   Notification.requestPermission().then(p => {
-    document.getElementById('permiso').innerText = 'Permiso: ' + p;
-    document.getElementById('estado').innerText = 'Estado: permiso actualizado';
+    document.getElementById('permiso').innerText = p;
+    setEstado('permiso actualizado');
   });
 }
 
@@ -135,12 +480,71 @@ function guardarEnStorage() {
 function cargarDesdeStorage() {
   const guardado = localStorage.getItem(STORAGE_KEY);
   if (!guardado) return;
-
   try {
     avisos = JSON.parse(guardado) || [];
   } catch (e) {
     avisos = [];
   }
+}
+
+function guardarClientesEnStorage() {
+  localStorage.setItem(CLIENTES_KEY, JSON.stringify(clientes));
+}
+
+function cargarClientes() {
+  const guardado = localStorage.getItem(CLIENTES_KEY);
+  if (!guardado) return;
+  try {
+    clientes = JSON.parse(guardado) || [];
+  } catch (e) {
+    clientes = [];
+  }
+}
+
+function guardarCliente() {
+  const nombre = document.getElementById('nuevoCliente').value.trim();
+  if (!nombre) {
+    alert('Escribí un cliente');
+    return;
+  }
+  if (!clientes.includes(nombre)) {
+    clientes.push(nombre);
+    clientes.sort((a, b) => a.localeCompare(b));
+    guardarClientesEnStorage();
+    renderClientes();
+    setEstado('cliente guardado');
+  }
+  document.getElementById('nuevoCliente').value = '';
+}
+
+function eliminarCliente(nombre) {
+  clientes = clientes.filter(c => c !== nombre);
+  guardarClientesEnStorage();
+  renderClientes();
+  setEstado('cliente eliminado');
+}
+
+function renderClientes() {
+  const lista = document.getElementById('listaClientes');
+  const data = document.getElementById('clientesGuardados');
+  lista.innerHTML = '';
+  data.innerHTML = '';
+
+  if (clientes.length === 0) {
+    lista.innerHTML = '<span class="badge">No hay clientes guardados</span>';
+    return;
+  }
+
+  clientes.forEach(nombre => {
+    const chip = document.createElement('div');
+    chip.className = 'chip';
+    chip.innerHTML = `${nombre} <button onclick="eliminarCliente('${nombre.replace(/'/g, "\\'")}')" style="width:auto; padding:0; border:none; background:none; color:#1d4ed8; font-size:12px;">✕</button>`;
+    lista.appendChild(chip);
+
+    const opt = document.createElement('option');
+    opt.value = nombre;
+    data.appendChild(opt);
+  });
 }
 
 function generarId() {
@@ -166,7 +570,7 @@ function limpiarFormulario() {
 
 function cancelarEdicion() {
   limpiarFormulario();
-  document.getElementById('estado').innerText = 'Estado: edición cancelada';
+  setEstado('edición cancelada');
 }
 
 function obtenerDatosFormulario() {
@@ -190,6 +594,13 @@ function obtenerDatosFormulario() {
     hora = parseado.hora;
     tipo = parseado.tipo || tipo;
     cliente = parseado.cliente || cliente;
+
+    document.getElementById('tipo').value = tipo;
+    document.getElementById('cliente').value = cliente;
+    document.getElementById('texto').value = texto;
+    document.getElementById('fecha').value = fecha;
+    document.getElementById('hora').value = hora;
+    mostrarCampoCliente();
   }
 
   const repeticion = Number(document.getElementById('repeticion').value || '0');
@@ -198,17 +609,14 @@ function obtenerDatosFormulario() {
     alert('Escribí el texto del aviso');
     return null;
   }
-
   if (!fecha) {
     alert('Elegí una fecha');
     return null;
   }
-
   if (!hora) {
     alert('Elegí una hora');
     return null;
   }
-
   if (tipo === 'cliente' && !cliente) {
     alert('Escribí el nombre del cliente');
     return null;
@@ -224,20 +632,35 @@ function interpretarTextoLibre(libre) {
   let fecha = document.getElementById('fecha').value || formatearFechaInput(new Date());
   let hora = '';
 
-  const matchHora = libre.match(/\b(\d{1,2}):(\d{2})\b/);
+  const matchHora = libre.match(/\b(\d{1,2})(?::(\d{2}))\b/);
   if (matchHora) {
     hora = `${String(matchHora[1]).padStart(2, '0')}:${matchHora[2]}`;
-    texto = texto.replace(matchHora[0], '').trim();
+    texto = texto.replace(matchHora[0], '');
   }
 
-  if (/\bmañana\b/i.test(texto)) {
+  if (/\bpasado\s+mañana\b/i.test(texto)) {
+    const fm = new Date();
+    fm.setDate(fm.getDate() + 2);
+    fecha = formatearFechaInput(fm);
+    texto = texto.replace(/\bpasado\s+mañana\b/gi, '');
+  } else if (/\bmañana\b/i.test(texto)) {
     const manana = new Date();
     manana.setDate(manana.getDate() + 1);
     fecha = formatearFechaInput(manana);
-    texto = texto.replace(/\bmañana\b/gi, '').trim();
+    texto = texto.replace(/\bmañana\b/gi, '');
   } else if (/\bhoy\b/i.test(texto)) {
     fecha = formatearFechaInput(new Date());
-    texto = texto.replace(/\bhoy\b/gi, '').trim();
+    texto = texto.replace(/\bhoy\b/gi, '');
+  }
+
+  const matchEnHoras = texto.match(/en\s+(\d+)\s+hora(s)?/i);
+  if (matchEnHoras) {
+    const horas = Number(matchEnHoras[1]);
+    const futura = new Date();
+    futura.setHours(futura.getHours() + horas);
+    fecha = formatearFechaInput(futura);
+    hora = `${String(futura.getHours()).padStart(2, '0')}:${String(futura.getMinutes()).padStart(2, '0')}`;
+    texto = texto.replace(matchEnHoras[0], '');
   }
 
   const matchCliente = texto.match(/(?:cliente|en)\s+([A-Za-zÁÉÍÓÚáéíóúÑñ0-9\s]+)/i);
@@ -246,9 +669,18 @@ function interpretarTextoLibre(libre) {
     cliente = matchCliente[1].trim();
   }
 
+  if (!cliente) {
+    const clienteDetectado = clientes.find(c => texto.toLowerCase().includes(c.toLowerCase()));
+    if (clienteDetectado) {
+      tipo = 'cliente';
+      cliente = clienteDetectado;
+    }
+  }
+
   texto = texto
-    .replace(/\b(recordame|recordar)\b/gi, '')
+    .replace(/\b(recordame|recordar|avisame|avisar)\b/gi, '')
     .replace(/\b(cliente)\b/gi, '')
+    .replace(/\ben\b\s+[A-Za-zÁÉÍÓÚáéíóúÑñ0-9\s]+$/i, cliente ? '' : '$&')
     .replace(/\s+/g, ' ')
     .trim();
 
@@ -259,22 +691,26 @@ function guardarAviso() {
   const datos = obtenerDatosFormulario();
   if (!datos) return;
 
+  if (datos.tipo === 'cliente' && datos.cliente && !clientes.includes(datos.cliente)) {
+    clientes.push(datos.cliente);
+    clientes.sort((a, b) => a.localeCompare(b));
+    guardarClientesEnStorage();
+    renderClientes();
+  }
+
   if (avisoEditandoId) {
-    avisos = avisos.map(aviso => {
-      if (aviso.id !== avisoEditandoId) return aviso;
-      return {
-        ...aviso,
-        tipo: datos.tipo,
-        cliente: datos.tipo === 'cliente' ? datos.cliente : '',
-        titulo: datos.texto,
-        fecha: datos.fecha,
-        hora: datos.hora,
-        repeticion: datos.repeticion,
-        hecho: false,
-        ultimaNotificacion: null
-      };
+    avisos = avisos.map(aviso => aviso.id !== avisoEditandoId ? aviso : {
+      ...aviso,
+      tipo: datos.tipo,
+      cliente: datos.tipo === 'cliente' ? datos.cliente : '',
+      titulo: datos.texto,
+      fecha: datos.fecha,
+      hora: datos.hora,
+      repeticion: datos.repeticion,
+      hecho: false,
+      ultimaNotificacion: null
     });
-    document.getElementById('estado').innerText = 'Estado: aviso modificado';
+    setEstado('aviso modificado');
   } else {
     avisos.push({
       id: generarId(),
@@ -287,7 +723,7 @@ function guardarAviso() {
       hecho: false,
       ultimaNotificacion: null
     });
-    document.getElementById('estado').innerText = 'Estado: aviso guardado';
+    setEstado('aviso guardado');
   }
 
   ordenarAvisos();
@@ -297,11 +733,7 @@ function guardarAviso() {
 }
 
 function ordenarAvisos() {
-  avisos.sort((a, b) => {
-    const valorA = `${a.fecha} ${a.hora}`;
-    const valorB = `${b.fecha} ${b.hora}`;
-    return valorA.localeCompare(valorB);
-  });
+  avisos.sort((a, b) => `${a.fecha} ${a.hora}`.localeCompare(`${b.fecha} ${b.hora}`));
 }
 
 function editarAviso(id) {
@@ -319,42 +751,39 @@ function editarAviso(id) {
   document.getElementById('btnGuardar').innerText = 'Guardar cambios';
   document.getElementById('btnCancelar').style.display = 'block';
   document.getElementById('seleccion').innerText = 'Editando: ' + aviso.titulo;
-  document.getElementById('estado').innerText = 'Estado: editando aviso';
   cambiarModoCarga();
   mostrarCampoCliente();
+  actualizarPreview(aviso);
+  setEstado('editando aviso');
 }
 
 function eliminarAviso(id) {
   avisos = avisos.filter(a => a.id !== id);
-  if (avisoEditandoId === id) {
-    limpiarFormulario();
-  }
+  if (avisoEditandoId === id) limpiarFormulario();
   guardarEnStorage();
   renderAvisos();
-  document.getElementById('estado').innerText = 'Estado: aviso eliminado';
+  setEstado('aviso eliminado');
 }
 
 function marcarHecho(id) {
   avisos = avisos.map(aviso => aviso.id === id ? { ...aviso, hecho: true } : aviso);
   guardarEnStorage();
   renderAvisos();
-  document.getElementById('estado').innerText = 'Estado: aviso marcado como hecho';
+  setEstado('aviso marcado como hecho');
 }
 
 function reactivarAviso(id) {
   avisos = avisos.map(aviso => aviso.id === id ? { ...aviso, hecho: false, ultimaNotificacion: null } : aviso);
   guardarEnStorage();
   renderAvisos();
-  document.getElementById('estado').innerText = 'Estado: aviso reactivado';
+  setEstado('aviso reactivado');
 }
 
 function posponerAviso(id, minutos) {
   avisos = avisos.map(aviso => {
     if (aviso.id !== id) return aviso;
-
     const fechaHora = new Date(`${aviso.fecha}T${aviso.hora}:00`);
     fechaHora.setMinutes(fechaHora.getMinutes() + minutos);
-
     return {
       ...aviso,
       fecha: formatearFechaInput(fechaHora),
@@ -363,34 +792,36 @@ function posponerAviso(id, minutos) {
       ultimaNotificacion: null
     };
   });
-
   ordenarAvisos();
   guardarEnStorage();
   renderAvisos();
-  document.getElementById('estado').innerText = 'Estado: aviso pospuesto';
+  setEstado('aviso pospuesto');
 }
 
 async function enviarNotificacion(aviso) {
   if (!('Notification' in window) || Notification.permission !== 'granted') {
-    document.getElementById('estado').innerText = 'Estado: no hay permiso de notificaciones';
+    setEstado('no hay permiso de notificaciones');
     return;
   }
 
   try {
     const reg = await navigator.serviceWorker.ready;
-    const detalle = aviso.tipo === 'cliente' && aviso.cliente
-      ? `${aviso.titulo} - ${aviso.cliente}`
-      : aviso.titulo;
-
+    const detalle = aviso.tipo === 'cliente' && aviso.cliente ? `${aviso.titulo} - ${aviso.cliente}` : aviso.titulo;
     await reg.showNotification('Avisos', {
       body: 'Ahora: ' + detalle,
       tag: 'aviso-' + aviso.id,
       renotify: true
     });
-    document.getElementById('estado').innerText = 'Estado: notificación enviada';
+    actualizarPreview(aviso);
+    setEstado('notificación enviada');
   } catch (e) {
-    document.getElementById('estado').innerText = 'Error: ' + e.message;
+    setEstado('Error: ' + e.message);
   }
+}
+
+function actualizarPreview(aviso) {
+  const detalle = aviso.tipo === 'cliente' && aviso.cliente ? `${aviso.titulo} - ${aviso.cliente}` : aviso.titulo;
+  document.getElementById('previewAlerta').innerText = detalle;
 }
 
 async function probarAvisoManual() {
@@ -398,16 +829,11 @@ async function probarAvisoManual() {
     alert('Primero guardá un aviso');
     return;
   }
-
-  const aviso = avisoEditandoId
-    ? avisos.find(a => a.id === avisoEditandoId)
-    : avisos.find(a => !a.hecho) || avisos[0];
-
+  const aviso = avisoEditandoId ? avisos.find(a => a.id === avisoEditandoId) : avisos.find(a => !a.hecho) || avisos[0];
   if (!aviso) {
     alert('No hay aviso disponible');
     return;
   }
-
   await enviarNotificacion(aviso);
 }
 
@@ -416,12 +842,10 @@ function revisarAvisosAutomaticos() {
   const fechaActual = formatearFechaInput(ahora);
   const minutoActual = String(ahora.getHours()).padStart(2, '0') + ':' + String(ahora.getMinutes()).padStart(2, '0');
   const sello = `${fechaActual} ${minutoActual}`;
-
   if (ultimoChequeoMinuto === sello) return;
   ultimoChequeoMinuto = sello;
 
   let huboCambios = false;
-
   avisos.forEach(aviso => {
     if (aviso.hecho) return;
 
@@ -456,35 +880,34 @@ function sumarMinutosFechaHora(sello, minutos) {
 
 function renderGrupo(titulo, lista) {
   if (lista.length === 0) {
-    return `<div style="margin-bottom:16px;"><h4 style="margin-bottom:8px;">${titulo}</h4><p style="color:#666;">Sin avisos.</p></div>`;
+    return `<div style="margin-bottom:16px;"><div class="list-title">${titulo}</div><p style="color:#666; margin:0;">Sin avisos.</p></div>`;
   }
 
   return `
     <div style="margin-bottom:16px;">
-      <h4 style="margin-bottom:8px;">${titulo}</h4>
+      <div class="list-title">${titulo}</div>
       ${lista.map(aviso => {
         const frecuenciaTexto = aviso.repeticion === 0 ? 'Una vez' : 'Cada ' + aviso.repeticion + ' min';
-        const clienteTexto = aviso.tipo === 'cliente' && aviso.cliente
-          ? `<div style="font-size:14px; color:#555; margin-bottom:4px;">Cliente: ${aviso.cliente}</div>`
-          : '';
-
+        const clienteTexto = aviso.tipo === 'cliente' && aviso.cliente ? `<div>Cliente: ${aviso.cliente}</div>` : '';
         return `
-          <div style="border:1px solid #ddd; padding:10px; margin-bottom:10px; border-radius:8px; background:${aviso.hecho ? '#f3f4f6' : '#fff'};">
-            <div style="display:flex; justify-content:space-between; gap:8px; margin-bottom:4px;">
-              <div style="font-weight:bold;">${aviso.titulo}</div>
-              <div style="font-size:12px; color:#555; text-transform:capitalize;">${aviso.tipo}</div>
+          <div class="aviso-card ${aviso.hecho ? 'hecho' : ''}">
+            <div class="aviso-top">
+              <div class="aviso-title">${aviso.titulo}</div>
+              <div class="aviso-type">${aviso.tipo}</div>
             </div>
-            ${clienteTexto}
-            <div style="font-size:14px; color:#555; margin-bottom:4px;">Fecha: ${aviso.fecha}</div>
-            <div style="font-size:14px; color:#555; margin-bottom:4px;">Hora: ${aviso.hora}</div>
-            <div style="font-size:14px; color:#555; margin-bottom:4px;">Insistencia: ${frecuenciaTexto}</div>
-            <div style="font-size:14px; color:${aviso.hecho ? '#166534' : '#555'}; margin-bottom:8px;">Estado: ${aviso.hecho ? 'Hecho' : 'Pendiente'}</div>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-              <button onclick="editarAviso(${aviso.id})">Modificar</button>
-              <button onclick="eliminarAviso(${aviso.id})">Eliminar</button>
+            <div class="aviso-meta">
+              ${clienteTexto}
+              <div>Fecha: ${aviso.fecha}</div>
+              <div>Hora: ${aviso.hora}</div>
+              <div>Insistencia: ${frecuenciaTexto}</div>
+              <div>Estado: ${aviso.hecho ? 'Hecho' : 'Pendiente'}</div>
+            </div>
+            <div class="actions">
+              <button class="btn-secondary" onclick="editarAviso(${aviso.id})">Modificar</button>
+              <button class="btn-danger" onclick="eliminarAviso(${aviso.id})">Eliminar</button>
               ${aviso.hecho
-                ? `<button onclick="reactivarAviso(${aviso.id})">Reactivar</button><div></div>`
-                : `<button onclick="marcarHecho(${aviso.id})">Hecho</button><button onclick="posponerAviso(${aviso.id}, 10)">+10 min</button>`}
+                ? `<button class="btn-secondary full" onclick="reactivarAviso(${aviso.id})">Reactivar</button>`
+                : `<button class="btn-primary" onclick="marcarHecho(${aviso.id})">Hecho</button><button class="btn-secondary" onclick="posponerAviso(${aviso.id}, 10)">+10 min</button>`}
             </div>
           </div>
         `;
@@ -495,18 +918,17 @@ function renderGrupo(titulo, lista) {
 
 function renderAvisos() {
   const contenedor = document.getElementById('listaAvisos');
+  document.getElementById('cantidadAvisos').innerText = `${avisos.length} aviso${avisos.length === 1 ? '' : 's'}`;
 
   if (avisos.length === 0) {
-    contenedor.innerHTML = '<p style="color:#666;">No hay avisos guardados.</p>';
+    contenedor.innerHTML = '<p style="color:#666; margin:0;">No hay avisos guardados.</p>';
     return;
   }
 
-  const clientes = avisos.filter(a => a.tipo === 'cliente');
-  const personales = avisos.filter(a => a.tipo !== 'cliente');
-
-  contenedor.innerHTML = renderGrupo('Clientes', clientes) + renderGrupo('Personales', personales);
+  const clientesLista = avisos.filter(a => a.tipo === 'cliente');
+  const personalesLista = avisos.filter(a => a.tipo !== 'cliente');
+  contenedor.innerHTML = renderGrupo('Clientes', clientesLista) + renderGrupo('Personales', personalesLista);
 }
 </script>
-
 </body>
 </html>
