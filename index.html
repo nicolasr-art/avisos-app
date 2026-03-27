@@ -9,10 +9,35 @@
 <body style="font-family: Arial; padding:20px; max-width:420px; margin:auto; box-sizing:border-box;">
 
 <h2 style="margin-bottom:8px;">Avisos</h2>
-<p style="margin-top:0; color:#555; font-size:14px;">Recordatorios automáticos con guardado local, edición, eliminación e insistencia.</p>
+<p style="margin-top:0; color:#555; font-size:14px;">Recordatorios automáticos con trabajo/personal, fecha, hora, edición, eliminación e insistencia.</p>
+
+<label for="modoCarga">Modo de carga</label><br>
+<select id="modoCarga" onchange="cambiarModoCarga()" style="width:100%; padding:10px; margin-top:6px; margin-bottom:12px; box-sizing:border-box;">
+  <option value="separado" selected>Texto + fecha + hora</option>
+  <option value="libre">Texto libre</option>
+</select>
+
+<div id="bloqueLibre" style="display:none;">
+  <label for="textoLibre">Texto libre</label><br>
+  <input id="textoLibre" type="text" placeholder="Ej: mañana 13:00 instalar hotfix en Cerro" style="width:100%; padding:10px; margin-top:6px; margin-bottom:12px; box-sizing:border-box;">
+</div>
+
+<label for="tipo">Tipo</label><br>
+<select id="tipo" onchange="mostrarCampoCliente()" style="width:100%; padding:10px; margin-top:6px; margin-bottom:12px; box-sizing:border-box;">
+  <option value="personal" selected>Personal</option>
+  <option value="cliente">Cliente</option>
+</select>
+
+<div id="bloqueCliente" style="display:none;">
+  <label for="cliente">Cliente</label><br>
+  <input id="cliente" type="text" placeholder="Ej: Cerro" style="width:100%; padding:10px; margin-top:6px; margin-bottom:12px; box-sizing:border-box;">
+</div>
 
 <label for="texto">Texto</label><br>
-<input id="texto" type="text" placeholder="Ej: Instalar hotfix en Cerro" style="width:100%; padding:10px; margin-top:6px; margin-bottom:12px; box-sizing:border-box;">
+<input id="texto" type="text" placeholder="Ej: Instalar hotfix" style="width:100%; padding:10px; margin-top:6px; margin-bottom:12px; box-sizing:border-box;">
+
+<label for="fecha">Fecha</label><br>
+<input id="fecha" type="date" style="width:100%; padding:10px; margin-top:6px; margin-bottom:12px; box-sizing:border-box;">
 
 <label for="hora">Hora</label><br>
 <input id="hora" type="time" style="width:100%; padding:10px; margin-top:6px; margin-bottom:12px; box-sizing:border-box;">
@@ -39,7 +64,7 @@
 <div id="listaAvisos"></div>
 
 <script>
-const STORAGE_KEY = 'avisos_app_v1';
+const STORAGE_KEY = 'avisos_app_v2';
 let avisos = [];
 let avisoEditandoId = null;
 let ultimoChequeoMinuto = null;
@@ -51,6 +76,9 @@ window.addEventListener('load', async () => {
     document.getElementById('permiso').innerText = 'Permiso: ' + Notification.permission;
   }
 
+  inicializarFechaHoy();
+  mostrarCampoCliente();
+  cambiarModoCarga();
   cargarDesdeStorage();
   renderAvisos();
 
@@ -66,6 +94,18 @@ window.addEventListener('load', async () => {
   setInterval(revisarAvisosAutomaticos, 10000);
 });
 
+function inicializarFechaHoy() {
+  const hoy = new Date();
+  document.getElementById('fecha').value = formatearFechaInput(hoy);
+}
+
+function formatearFechaInput(fecha) {
+  const anio = fecha.getFullYear();
+  const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+  const dia = String(fecha.getDate()).padStart(2, '0');
+  return `${anio}-${mes}-${dia}`;
+}
+
 function activarNotificaciones() {
   if (!('Notification' in window)) {
     alert('No soporta notificaciones');
@@ -76,6 +116,16 @@ function activarNotificaciones() {
     document.getElementById('permiso').innerText = 'Permiso: ' + p;
     document.getElementById('estado').innerText = 'Estado: permiso actualizado';
   });
+}
+
+function cambiarModoCarga() {
+  const modo = document.getElementById('modoCarga').value;
+  document.getElementById('bloqueLibre').style.display = modo === 'libre' ? 'block' : 'none';
+}
+
+function mostrarCampoCliente() {
+  const tipo = document.getElementById('tipo').value;
+  document.getElementById('bloqueCliente').style.display = tipo === 'cliente' ? 'block' : 'none';
 }
 
 function guardarEnStorage() {
@@ -98,13 +148,20 @@ function generarId() {
 }
 
 function limpiarFormulario() {
+  document.getElementById('modoCarga').value = 'separado';
+  document.getElementById('textoLibre').value = '';
+  document.getElementById('tipo').value = 'personal';
+  document.getElementById('cliente').value = '';
   document.getElementById('texto').value = '';
   document.getElementById('hora').value = '';
   document.getElementById('repeticion').value = '10';
+  inicializarFechaHoy();
   avisoEditandoId = null;
   document.getElementById('btnGuardar').innerText = 'Guardar aviso';
   document.getElementById('btnCancelar').style.display = 'none';
   document.getElementById('seleccion').innerText = 'Editando: ninguno';
+  cambiarModoCarga();
+  mostrarCampoCliente();
 }
 
 function cancelarEdicion() {
@@ -112,29 +169,107 @@ function cancelarEdicion() {
   document.getElementById('estado').innerText = 'Estado: edición cancelada';
 }
 
-function guardarAviso() {
-  const texto = document.getElementById('texto').value.trim();
-  const hora = document.getElementById('hora').value;
+function obtenerDatosFormulario() {
+  const modo = document.getElementById('modoCarga').value;
+  let tipo = document.getElementById('tipo').value;
+  let cliente = document.getElementById('cliente').value.trim();
+  let texto = document.getElementById('texto').value.trim();
+  let fecha = document.getElementById('fecha').value;
+  let hora = document.getElementById('hora').value;
+
+  if (modo === 'libre') {
+    const libre = document.getElementById('textoLibre').value.trim();
+    if (!libre) {
+      alert('Escribí el texto libre del aviso');
+      return null;
+    }
+
+    const parseado = interpretarTextoLibre(libre);
+    texto = parseado.texto;
+    fecha = parseado.fecha;
+    hora = parseado.hora;
+    tipo = parseado.tipo || tipo;
+    cliente = parseado.cliente || cliente;
+  }
+
   const repeticion = Number(document.getElementById('repeticion').value || '0');
 
   if (!texto) {
     alert('Escribí el texto del aviso');
-    return;
+    return null;
+  }
+
+  if (!fecha) {
+    alert('Elegí una fecha');
+    return null;
   }
 
   if (!hora) {
     alert('Elegí una hora');
-    return;
+    return null;
   }
+
+  if (tipo === 'cliente' && !cliente) {
+    alert('Escribí el nombre del cliente');
+    return null;
+  }
+
+  return { modo, tipo, cliente, texto, fecha, hora, repeticion };
+}
+
+function interpretarTextoLibre(libre) {
+  let texto = libre;
+  let tipo = document.getElementById('tipo').value;
+  let cliente = '';
+  let fecha = document.getElementById('fecha').value || formatearFechaInput(new Date());
+  let hora = '';
+
+  const matchHora = libre.match(/\b(\d{1,2}):(\d{2})\b/);
+  if (matchHora) {
+    hora = `${String(matchHora[1]).padStart(2, '0')}:${matchHora[2]}`;
+    texto = texto.replace(matchHora[0], '').trim();
+  }
+
+  if (/\bmañana\b/i.test(texto)) {
+    const manana = new Date();
+    manana.setDate(manana.getDate() + 1);
+    fecha = formatearFechaInput(manana);
+    texto = texto.replace(/\bmañana\b/gi, '').trim();
+  } else if (/\bhoy\b/i.test(texto)) {
+    fecha = formatearFechaInput(new Date());
+    texto = texto.replace(/\bhoy\b/gi, '').trim();
+  }
+
+  const matchCliente = texto.match(/(?:cliente|en)\s+([A-Za-zÁÉÍÓÚáéíóúÑñ0-9\s]+)/i);
+  if (matchCliente) {
+    tipo = 'cliente';
+    cliente = matchCliente[1].trim();
+  }
+
+  texto = texto
+    .replace(/\b(recordame|recordar)\b/gi, '')
+    .replace(/\b(cliente)\b/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  return { texto, tipo, cliente, fecha, hora };
+}
+
+function guardarAviso() {
+  const datos = obtenerDatosFormulario();
+  if (!datos) return;
 
   if (avisoEditandoId) {
     avisos = avisos.map(aviso => {
       if (aviso.id !== avisoEditandoId) return aviso;
       return {
         ...aviso,
-        titulo: texto,
-        hora,
-        repeticion,
+        tipo: datos.tipo,
+        cliente: datos.tipo === 'cliente' ? datos.cliente : '',
+        titulo: datos.texto,
+        fecha: datos.fecha,
+        hora: datos.hora,
+        repeticion: datos.repeticion,
         hecho: false,
         ultimaNotificacion: null
       };
@@ -143,26 +278,41 @@ function guardarAviso() {
   } else {
     avisos.push({
       id: generarId(),
-      titulo: texto,
-      hora,
-      repeticion,
+      tipo: datos.tipo,
+      cliente: datos.tipo === 'cliente' ? datos.cliente : '',
+      titulo: datos.texto,
+      fecha: datos.fecha,
+      hora: datos.hora,
+      repeticion: datos.repeticion,
       hecho: false,
       ultimaNotificacion: null
     });
     document.getElementById('estado').innerText = 'Estado: aviso guardado';
   }
 
-  avisos.sort((a, b) => a.hora.localeCompare(b.hora));
+  ordenarAvisos();
   guardarEnStorage();
   renderAvisos();
   limpiarFormulario();
+}
+
+function ordenarAvisos() {
+  avisos.sort((a, b) => {
+    const valorA = `${a.fecha} ${a.hora}`;
+    const valorB = `${b.fecha} ${b.hora}`;
+    return valorA.localeCompare(valorB);
+  });
 }
 
 function editarAviso(id) {
   const aviso = avisos.find(a => a.id === id);
   if (!aviso) return;
 
+  document.getElementById('modoCarga').value = 'separado';
+  document.getElementById('tipo').value = aviso.tipo || 'personal';
+  document.getElementById('cliente').value = aviso.cliente || '';
   document.getElementById('texto').value = aviso.titulo;
+  document.getElementById('fecha').value = aviso.fecha;
   document.getElementById('hora').value = aviso.hora;
   document.getElementById('repeticion').value = String(aviso.repeticion);
   avisoEditandoId = id;
@@ -170,6 +320,8 @@ function editarAviso(id) {
   document.getElementById('btnCancelar').style.display = 'block';
   document.getElementById('seleccion').innerText = 'Editando: ' + aviso.titulo;
   document.getElementById('estado').innerText = 'Estado: editando aviso';
+  cambiarModoCarga();
+  mostrarCampoCliente();
 }
 
 function eliminarAviso(id) {
@@ -200,22 +352,19 @@ function posponerAviso(id, minutos) {
   avisos = avisos.map(aviso => {
     if (aviso.id !== id) return aviso;
 
-    const [h, m] = aviso.hora.split(':').map(Number);
-    const fecha = new Date();
-    fecha.setHours(h, m, 0, 0);
-    fecha.setMinutes(fecha.getMinutes() + minutos);
-
-    const nuevaHora = String(fecha.getHours()).padStart(2, '0') + ':' + String(fecha.getMinutes()).padStart(2, '0');
+    const fechaHora = new Date(`${aviso.fecha}T${aviso.hora}:00`);
+    fechaHora.setMinutes(fechaHora.getMinutes() + minutos);
 
     return {
       ...aviso,
-      hora: nuevaHora,
+      fecha: formatearFechaInput(fechaHora),
+      hora: String(fechaHora.getHours()).padStart(2, '0') + ':' + String(fechaHora.getMinutes()).padStart(2, '0'),
       hecho: false,
       ultimaNotificacion: null
     };
   });
 
-  avisos.sort((a, b) => a.hora.localeCompare(b.hora));
+  ordenarAvisos();
   guardarEnStorage();
   renderAvisos();
   document.getElementById('estado').innerText = 'Estado: aviso pospuesto';
@@ -229,8 +378,12 @@ async function enviarNotificacion(aviso) {
 
   try {
     const reg = await navigator.serviceWorker.ready;
+    const detalle = aviso.tipo === 'cliente' && aviso.cliente
+      ? `${aviso.titulo} - ${aviso.cliente}`
+      : aviso.titulo;
+
     await reg.showNotification('Avisos', {
-      body: 'Ahora: ' + aviso.titulo,
+      body: 'Ahora: ' + detalle,
       tag: 'aviso-' + aviso.id,
       renotify: true
     });
@@ -260,28 +413,30 @@ async function probarAvisoManual() {
 
 function revisarAvisosAutomaticos() {
   const ahora = new Date();
+  const fechaActual = formatearFechaInput(ahora);
   const minutoActual = String(ahora.getHours()).padStart(2, '0') + ':' + String(ahora.getMinutes()).padStart(2, '0');
+  const sello = `${fechaActual} ${minutoActual}`;
 
-  if (ultimoChequeoMinuto === minutoActual) return;
-  ultimoChequeoMinuto = minutoActual;
+  if (ultimoChequeoMinuto === sello) return;
+  ultimoChequeoMinuto = sello;
 
   let huboCambios = false;
 
   avisos.forEach(aviso => {
     if (aviso.hecho) return;
 
-    if (aviso.hora === minutoActual) {
+    if (aviso.fecha === fechaActual && aviso.hora === minutoActual) {
       enviarNotificacion(aviso);
-      aviso.ultimaNotificacion = minutoActual;
+      aviso.ultimaNotificacion = sello;
       huboCambios = true;
       return;
     }
 
     if (aviso.repeticion > 0 && aviso.ultimaNotificacion) {
-      const siguiente = sumarMinutosHHMM(aviso.ultimaNotificacion, aviso.repeticion);
-      if (siguiente === minutoActual) {
+      const siguiente = sumarMinutosFechaHora(aviso.ultimaNotificacion, aviso.repeticion);
+      if (siguiente === sello) {
         enviarNotificacion(aviso);
-        aviso.ultimaNotificacion = minutoActual;
+        aviso.ultimaNotificacion = sello;
         huboCambios = true;
       }
     }
@@ -293,49 +448,63 @@ function revisarAvisosAutomaticos() {
   }
 }
 
-function sumarMinutosHHMM(hhmm, minutos) {
-  const [h, m] = hhmm.split(':').map(Number);
-  const fecha = new Date();
-  fecha.setHours(h, m, 0, 0);
+function sumarMinutosFechaHora(sello, minutos) {
+  const fecha = new Date(sello.replace(' ', 'T') + ':00');
   fecha.setMinutes(fecha.getMinutes() + minutos);
-  return String(fecha.getHours()).padStart(2, '0') + ':' + String(fecha.getMinutes()).padStart(2, '0');
+  return `${formatearFechaInput(fecha)} ${String(fecha.getHours()).padStart(2, '0')}:${String(fecha.getMinutes()).padStart(2, '0')}`;
+}
+
+function renderGrupo(titulo, lista) {
+  if (lista.length === 0) {
+    return `<div style="margin-bottom:16px;"><h4 style="margin-bottom:8px;">${titulo}</h4><p style="color:#666;">Sin avisos.</p></div>`;
+  }
+
+  return `
+    <div style="margin-bottom:16px;">
+      <h4 style="margin-bottom:8px;">${titulo}</h4>
+      ${lista.map(aviso => {
+        const frecuenciaTexto = aviso.repeticion === 0 ? 'Una vez' : 'Cada ' + aviso.repeticion + ' min';
+        const clienteTexto = aviso.tipo === 'cliente' && aviso.cliente
+          ? `<div style="font-size:14px; color:#555; margin-bottom:4px;">Cliente: ${aviso.cliente}</div>`
+          : '';
+
+        return `
+          <div style="border:1px solid #ddd; padding:10px; margin-bottom:10px; border-radius:8px; background:${aviso.hecho ? '#f3f4f6' : '#fff'};">
+            <div style="display:flex; justify-content:space-between; gap:8px; margin-bottom:4px;">
+              <div style="font-weight:bold;">${aviso.titulo}</div>
+              <div style="font-size:12px; color:#555; text-transform:capitalize;">${aviso.tipo}</div>
+            </div>
+            ${clienteTexto}
+            <div style="font-size:14px; color:#555; margin-bottom:4px;">Fecha: ${aviso.fecha}</div>
+            <div style="font-size:14px; color:#555; margin-bottom:4px;">Hora: ${aviso.hora}</div>
+            <div style="font-size:14px; color:#555; margin-bottom:4px;">Insistencia: ${frecuenciaTexto}</div>
+            <div style="font-size:14px; color:${aviso.hecho ? '#166534' : '#555'}; margin-bottom:8px;">Estado: ${aviso.hecho ? 'Hecho' : 'Pendiente'}</div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+              <button onclick="editarAviso(${aviso.id})">Modificar</button>
+              <button onclick="eliminarAviso(${aviso.id})">Eliminar</button>
+              ${aviso.hecho
+                ? `<button onclick="reactivarAviso(${aviso.id})">Reactivar</button><div></div>`
+                : `<button onclick="marcarHecho(${aviso.id})">Hecho</button><button onclick="posponerAviso(${aviso.id}, 10)">+10 min</button>`}
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
 }
 
 function renderAvisos() {
   const contenedor = document.getElementById('listaAvisos');
-  contenedor.innerHTML = '';
 
   if (avisos.length === 0) {
     contenedor.innerHTML = '<p style="color:#666;">No hay avisos guardados.</p>';
     return;
   }
 
-  avisos.forEach(aviso => {
-    const card = document.createElement('div');
-    card.style.border = '1px solid #ddd';
-    card.style.padding = '10px';
-    card.style.marginBottom = '10px';
-    card.style.borderRadius = '8px';
-    card.style.background = aviso.hecho ? '#f3f4f6' : '#fff';
+  const clientes = avisos.filter(a => a.tipo === 'cliente');
+  const personales = avisos.filter(a => a.tipo !== 'cliente');
 
-    const frecuenciaTexto = aviso.repeticion === 0 ? 'Una vez' : 'Cada ' + aviso.repeticion + ' min';
-
-    card.innerHTML = `
-      <div style="font-weight:bold; margin-bottom:4px;">${aviso.titulo}</div>
-      <div style="font-size:14px; color:#555; margin-bottom:4px;">Hora: ${aviso.hora}</div>
-      <div style="font-size:14px; color:#555; margin-bottom:4px;">Insistencia: ${frecuenciaTexto}</div>
-      <div style="font-size:14px; color:${aviso.hecho ? '#166534' : '#555'}; margin-bottom:8px;">Estado: ${aviso.hecho ? 'Hecho' : 'Pendiente'}</div>
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-        <button onclick="editarAviso(${aviso.id})">Modificar</button>
-        <button onclick="eliminarAviso(${aviso.id})">Eliminar</button>
-        ${aviso.hecho
-          ? `<button onclick="reactivarAviso(${aviso.id})">Reactivar</button><div></div>`
-          : `<button onclick="marcarHecho(${aviso.id})">Hecho</button><button onclick="posponerAviso(${aviso.id}, 10)">+10 min</button>`}
-      </div>
-    `;
-
-    contenedor.appendChild(card);
-  });
+  contenedor.innerHTML = renderGrupo('Clientes', clientes) + renderGrupo('Personales', personales);
 }
 </script>
 
